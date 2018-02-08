@@ -20,8 +20,6 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
  * Controller used to manage the application security.
  * See https://symfony.com/doc/current/cookbook/security/form_login_setup.html.
  *
- * @author Ryan Weaver <weaverryan@gmail.com>
- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
  */
 class SecurityController extends AbstractController
 {

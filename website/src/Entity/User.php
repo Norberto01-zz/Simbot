@@ -14,7 +14,7 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-use Symfony\Component\Security\Core\User\AdvancedUserInterface;
+
 
 /**
  * @ORM\Entity(repositoryClass="App\Repository\UserRepository")
@@ -28,10 +28,8 @@ use Symfony\Component\Security\Core\User\AdvancedUserInterface;
  * Tip: if you have an existing database, you can generate these entity class automatically.
  * See https://symfony.com/doc/current/cookbook/doctrine/reverse_engineering.html
  *
- * @author Ryan Weaver <weaverryan@gmail.com>
- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
  */
-class User implements AdvancedUserInterface, \Serializable
+class User implements UserInterface
 {
     /**
      * @var int
@@ -84,19 +82,51 @@ class User implements AdvancedUserInterface, \Serializable
      *
      * @ORM\Column(type="json")
      */
-    private $roles = [];
+    private $roles;
 
     /**
      * @ORM\Column(name="is_active", type="boolean")
      */
     private $isActive;
 
+    /**
+     * @var \DateTime
+     * @ORM\Column(name="last_login", type="datetime", nullable=true)
+     */
+    private $lastLogin;
 
+    /**
+     * @var \DateTime
+     * @ORM\Column(name="password_requested_at", type="datetime", nullable=true)
+     */
+    private $passwordRequestedAt;
+
+    /**
+     * @var \DateTime
+     * @ORM\Column(name="created_at", type="datetime", nullable=true)
+     */
+    private $createdAt;
+
+    /**
+     * @var \DateTime
+     * @ORM\Column(name="updated_at", type="datetime", nullable=true)
+     */
+    private $updatedAt;
+
+    /**
+     * @var string
+     * @ORM\Column(type="string", nullable=true)
+     */
+    private $salt;
+
+    /**
+     * User constructor.
+     */
     public function __construct()
     {
         $this->isActive = true;
-        // may not be needed, see section on salt below
-        // $this->salt = md5(uniqid('', true));
+        $this->roles = array();
+        $this->createdAt = new \DateTime();
     }
 
     public function getId(): int
@@ -104,7 +134,7 @@ class User implements AdvancedUserInterface, \Serializable
         return $this->id;
     }
 
-    public function setFullName(string $fullName): void
+    public function setFullName($fullName): void
     {
         $this->fullName = $fullName;
     }
@@ -119,29 +149,30 @@ class User implements AdvancedUserInterface, \Serializable
         return $this->username;
     }
 
-    public function setUsername(string $username): void
+    public function setUsername($username): void
     {
         $this->username = $username;
     }
-//
-//    public function getEmail(): string
-//    {
-//        return $this->email;
-//    }
-//
-//    public function setEmail(string $email): void
-//    {
-//        $this->email = $email;
-//    }
 
     public function getPassword(): string
     {
         return $this->password;
     }
 
-    public function setPassword(string $password): void
+    public function setPassword($password): void
     {
         $this->password = $password;
+    }
+
+    public function setUpdatedAt(\DateTime $time = null)
+    {
+        $this->updatedAt = $time;
+    }
+
+
+    public function getCreatedAt()
+    {
+        $this->createdAt;
     }
 
     /**
@@ -165,20 +196,6 @@ class User implements AdvancedUserInterface, \Serializable
     }
 
     /**
-     * Returns the salt that was originally used to encode the password.
-     *
-     * {@inheritdoc}
-     */
-    public function getSalt(): ?string
-    {
-        // See "Do you need to use a Salt?" at https://symfony.com/doc/current/cookbook/security/entity_provider.html
-        // we're using bcrypt in security.yml to encode the password, so
-        // the salt value is built-in and you don't have to generate one
-
-        return null;
-    }
-
-    /**
      * Removes sensitive data from the user.
      *
      * {@inheritdoc}
@@ -194,8 +211,13 @@ class User implements AdvancedUserInterface, \Serializable
      */
     public function serialize(): string
     {
-        // add $this->salt too if you don't use Bcrypt or Argon2i
-        return serialize([$this->id, $this->username, $this->password, $this->isActive]);
+        return serialize(array(
+            $this->id,
+            $this->username,
+            $this->password,
+            $this->isActive,
+            $this->email
+        ));
     }
 
     /**
@@ -203,8 +225,14 @@ class User implements AdvancedUserInterface, \Serializable
      */
     public function unserialize($serialized): void
     {
-        // add $this->salt too if you don't use Bcrypt or Argon2i
-        [$this->id, $this->username, $this->password, $this->isActive] = unserialize($serialized, ['allowed_classes' => false]);
+        $data = unserialize($serialized, ['allowed_classes' => false]);
+        list(
+            $this->id,
+            $this->username,
+            $this->password,
+            $this->isActive,
+            $this->email
+        ) = $data;
     }
 
     /**
@@ -294,8 +322,165 @@ class User implements AdvancedUserInterface, \Serializable
     /**
      * @param string $email
      */
-    public function setEmail (string $email): void
+    public function setEmail ($email): void
     {
         $this->email = $email;
+    }
+
+    /**
+     * Tells if the the given user has the super admin role.
+     *
+     * @return bool
+     */
+    public function isSuperAdmin()
+    {
+        return $this->hasRole(static::ROLE_SUPER_ADMIN);
+    }
+
+
+    /**
+     * @param bool $boolean
+     *
+     * @return static
+     */
+    public function setEnabled ($boolean)
+    {
+        $this->isActive = $boolean;
+    }
+
+    /**
+     * Sets the super admin status.
+     *
+     * @param bool $boolean
+     *
+     * @return static
+     */
+    public function setSuperAdmin($boolean)
+    {
+        if (true === $boolean) {
+            $this->addRole(static::ROLE_SUPER_ADMIN);
+        } else {
+            $this->removeRole(static::ROLE_SUPER_ADMIN);
+        }
+        return $this;
+    }
+
+    /**
+     * Sets the timestamp that the user requested a password reset.
+     *
+     * @param null|\DateTime $date
+     *
+     * @return static
+     */
+    public function setPasswordRequestedAt (\DateTime $date = null)
+    {
+        $this->passwordRequestedAt = $date;
+        return $this;
+    }
+
+    /**
+     * Gets the timestamp that the user requested a password reset.
+     *
+     * @return null|\DateTime
+     */
+    public function getPasswordRequestedAt()
+    {
+        return $this->passwordRequestedAt;
+    }
+
+    /**
+     * Checks whether the password reset request has expired.
+     *
+     * @param int $ttl Requests older than this many seconds will be considered expired
+     *
+     * @return bool
+     */
+    public function isPasswordRequestNonExpired ($ttl)
+    {
+        return $this->getPasswordRequestedAt() instanceof \DateTime &&
+               $this->getPasswordRequestedAt()->getTimestamp() + $ttl > time();
+    }
+
+    /**
+     * Sets the last login time.
+     *
+     * @param \DateTime|null $time
+     *
+     * @return static
+     */
+    public function setLastLogin(\DateTime $time = null)
+    {
+        $this->lastLogin = $time;
+        return $this;
+    }
+
+    /**
+     * Never use this to check if this user has access to anything!
+     *
+     * Use the AuthorizationChecker, or an implementation of AccessDecisionManager
+     * instead, e.g.
+     *
+     *         $authorizationChecker->isGranted('ROLE_USER');
+     *
+     * @param string $role
+     *
+     * @return bool
+     */
+    public function hasRole ($role)
+    {
+        return in_array(strtoupper($role), $this->getRoles(), true);
+    }
+
+    /**
+     * Adds a role to the user.
+     *
+     * @param string $role
+     *
+     * @return static
+     */
+    public function addRole($role)
+    {
+        $role = strtoupper($role);
+        if ($role === static::ROLE_DEFAULT) {
+            return $this;
+        }
+        if (!in_array($role, $this->roles, true)) {
+            $this->roles[] = $role;
+        }
+        return $this;
+    }
+
+    /**
+     * Removes a role to the user.
+     *
+     * @param string $role
+     *
+     * @return static
+     */
+    public function removeRole ($role)
+    {
+        if (false !== $key = array_search(strtoupper($role), $this->roles, true)) {
+            unset($this->roles[$key]);
+            $this->roles = array_values($this->roles);
+        }
+        return $this;
+    }
+
+    public function setSalt($salt)
+    {
+        $this->salt = $salt;
+        return $this;
+    }
+
+    /**
+     * Returns the salt that was originally used to encode the password.
+     *
+     * This can return null if the password was not encoded using a salt.
+     *
+     * @return string|null The salt
+     */
+    public function getSalt ()
+    {
+        return $this->salt;
     }
 }

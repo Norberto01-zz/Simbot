@@ -1,0 +1,60 @@
+<div class="well">
+    {{ form_start(form) }}
+    <fieldset>
+        <legend><i class="fa fa-users" aria-hidden="true"></i> {{ 'Join the comunity!'|trans }}</legend>
+        <div class="form-group">
+            <label for="fullname">{{ 'Your complete name'|trans }}</label>
+            {{
+                form_widget(
+                    form.fullname, {
+                        'attr': { 'class': 'form-control', 'name': 'fullname', 'id': '_fullname' }
+                    }
+                )
+            }}
+        </div>
+        <div class="form-group">
+            <label for="username">{{ 'label.username'|trans }}</label>
+            {{
+                form_widget(
+                    form.username, {
+                        'attr': { 'class': 'form-control', 'name': 'username', 'id': '_username' }
+                    }
+                )
+            }}
+        </div>
+        <div class="form-group">
+            <label for="email">{{ 'Email'|trans }}</label>
+            {{
+                form_widget(
+                    form.email, {
+                        'attr': { 'class': 'form-control', 'name': 'email', 'id': '_email' }
+                    }
+                )
+            }}
+        </div>
+        <div class="form-group">
+            <label for="password_1">{{ 'label.password'|trans }}</label>
+            {{
+                form_widget(
+                    form.plainPassword.first, {
+                        'attr': { 'class': 'form-control', 'name': 'password_1', 'id': '_password_1' }
+                    }
+                )
+            }}
+        </div>
+        <div class="form-group">
+            <label for="password_2">Confirm password</label>
+            {{
+                form_widget(
+                    form.plainPassword.second, {
+                        'attr': { 'class': 'form-control', 'name': 'password_2', 'id': '_password_2' }
+                    }
+                )
+            }}
+        </div>
+        <button type="submit" class="btn btn-primary">
+            <i class="fa fa-user-plus" aria-hidden="true"></i> Sign up
+        </button>
+    </fieldset>
+    {{ form_end(form) }}
+</div>

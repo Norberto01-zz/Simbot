@@ -17,7 +17,9 @@ Encore
     .addEntry('js/admin', './assets/js/admin.js')
     .addEntry('js/search', './assets/js/search.js')
     .addStyleEntry('css/app', ['./assets/scss/app.scss'])
-    .addStyleEntry('css/admin', ['./assets/scss/admin.scss'])
+    .addStyleEntry('css/main', ['./assets/scss/custom.scss'])
+    .addStyleEntry('css/dashboard', ['./assets/css/material-dashboard.css'])
+    .addStyleEntry('css/admins', ['./assets/scss/administration.scss'])
 ;
 
 module.exports = Encore.getWebpackConfig();

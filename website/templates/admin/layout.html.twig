@@ -1,15 +1,10 @@
-{#
-   This is the base template of the all backend pages. Since this layout is similar
-   to the global layout, we inherit from it to just change the contents of some
-   blocks. In practice, backend templates are using a three-level inheritance,
-   showing how powerful, yet easy to use, is Twig's inheritance mechanism.
-   See https://symfony.com/doc/current/book/templating.html#template-inheritance-and-layouts
-#}
 {% extends 'base.html.twig' %}
 
 {% block stylesheets %}
     {{ parent() }}
-    <link rel="stylesheet" href="{{ asset('build/css/admin.css') }}">
+    <link rel="stylesheet" href="{{ asset('build/css/admins.css') }}">
+    <link href="http://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css" rel="stylesheet">
+    <link href='http://fonts.googleapis.com/css?family=Roboto:400,700,300|Material+Icons' rel='stylesheet' type='text/css'>
 {% endblock %}
 
 {% block javascripts %}

@@ -30,13 +30,8 @@ use Symfony\Component\Routing\Annotation\Route;
  * purposes. However, in your real Symfony application you should use any of the
  * existing bundles that let you generate ready-to-use backends without effort.
  *
- * See http://knpbundles.com/keyword/admin
- *
  * @Route("/admin/post")
  * @Security("has_role('ROLE_ADMIN')")
- *
- * @author Ryan Weaver <weaverryan@gmail.com>
- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
  */
 class BlogController extends AbstractController
 {
@@ -51,7 +46,6 @@ class BlogController extends AbstractController
      *     could move this annotation to any other controller while maintaining
      *     the route name and therefore, without breaking any existing link.
      *
-     * @Route("/", name="admin_index")
      * @Route("/", name="admin_post_index")
      * @Method("GET")
      */
